@@ -3,12 +3,15 @@ from subprocess import Popen, PIPE
 import time
 
 DEFAULT_DIFFICULTY = 20
-MAZE_GENERATOR_PATH = "maze_gen.cpp"
+MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
 MAZE_BACKGROUND_COLOUR = (255, 255, 255)
+
+
 class MAZE_TILE:
     WALL = 0
     PATH = 1
+
 
 class MazeTile:
     def __init__(self, row, col, size, x_offset, y_offset):
@@ -36,27 +39,27 @@ class Maze:
                 elif self.layout_grid[row][col] == ".":
                     self.end = (row, col)
 
-
     def __init__(self, layout_grid, rows, cols):
         self.rows = rows
         self.cols = cols
         self.layout_grid = layout_grid
-        self.grid = None
+        self.grid = [[None for _ in range(self.cols)] for _ in range(self.rows)]
         self.start = None
         self.end = None
+        self.tiles = []
         self.parse_layout_grid()
 
     def populate_tiles(self, tile_size, x_offset, y_offset):
         for row in range(self.rows):
             for col in range(self.cols):
-                if self.grid[row][col] == MAZE_TILE.FREE:
+                if self.grid[row][col] == MAZE_TILE.PATH:
                     continue
-                self.tiles[row][col] = MazeTile(row, col, tile_size, x_offset, y_offset)
+                self.tiles.append(MazeTile(row, col, tile_size, x_offset, y_offset))
 
     def draw(self, screen):
-        for row in range(self.rows):
-            for col in range(self.cols):
-                self.tiles[row][col].draw(screen)
+        for tile in self.tiles:
+            tile.draw(screen)
+
 
 class MazeInator:
 
@@ -67,20 +70,19 @@ class MazeInator:
         maze = maze_gen_output.split("\n")[1:]
         self.maze = Maze(maze, int(rows), int(cols))
 
-
     def __init__(self, screen: pygame.surface.Surface, difficulty, time_limit=15):
 
         self.screen = screen
         self.screen_width = screen.get_width()
         self.screen_height = screen.get_height()
 
-        self.maze = None
+        self.maze: Maze = None
         self.difficulty = difficulty
 
         tile_size: int = min(self.screen_width, self.screen_height) // self.difficulty
-        x_offset = (self.screen_width - (tile_size * self.difficulty)) // 2 if self.screen_width > self.screen_height\
+        x_offset = (self.screen_width - (tile_size * self.difficulty)) // 2 if self.screen_width > self.screen_height \
             else 0
-        y_offset = (self.screen_height - (tile_size * self.difficulty)) // 2 if self.screen_height > self.screen_width\
+        y_offset = (self.screen_height - (tile_size * self.difficulty)) // 2 if self.screen_height > self.screen_width \
             else 0
 
         self.time_started = time.time()
@@ -88,6 +90,7 @@ class MazeInator:
         self.game_over = False
 
         self.generate_maze()
+        self.maze.populate_tiles(tile_size, x_offset, y_offset)
 
     def draw(self):
         self.screen.fill(MAZE_BACKGROUND_COLOUR)
@@ -98,12 +101,8 @@ class MazeInator:
         seconds_elapsed = current_time - self.time_started
         if seconds_elapsed >= self.time_limit:
             self.game_over = True
-        if self.game_over:
-            self.draw_game_over()
         else:
             self.draw()
-
-
 
 
 def main():
@@ -118,8 +117,6 @@ def main():
                 return
 
         maze.update()
-
-        screen.fill((255, 255, 255))
         pygame.display.flip()
 
 
