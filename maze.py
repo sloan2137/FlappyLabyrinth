@@ -2,7 +2,7 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
-DEFAULT_DIFFICULTY = 20
+DEFAULT_DIFFICULTY = 100
 MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
 MAZE_BACKGROUND_COLOUR = (255, 255, 255)
@@ -65,7 +65,8 @@ class MazeInator:
 
     def generate_maze(self):
         maze_gen = Popen([f"./{MAZE_GENERATOR_PATH}", str(self.difficulty)], stdout=PIPE)
-        maze_gen_output = maze_gen.stdout.read().decode("utf-8")
+        time.sleep(0.1)
+        maze_gen_output = open("maze.maze", "r").read()
         rows, cols = maze_gen_output.split("\n")[0].split(" ")
         maze = maze_gen_output.split("\n")[1:]
         self.maze = Maze(maze, int(rows), int(cols))
