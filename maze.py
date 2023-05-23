@@ -2,10 +2,13 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
-DEFAULT_DIFFICULTY = 50
+DEFAULT_DIFFICULTY = 100
 MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
 MAZE_BACKGROUND_COLOUR = (255, 255, 255)
+WALL_WIDTH = 2
+
+MIN_OFFSET = 10
 
 
 class MAZE_TILE:
@@ -13,52 +16,127 @@ class MAZE_TILE:
     PATH = 1
 
 
-class MazeTile:
-    def __init__(self, row, col, size, x_offset, y_offset):
-        self.row = row
-        self.col = col
-        self.size = size
-        self.x = self.col * self.size + x_offset
-        self.y = self.row * self.size + y_offset
-        self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
+class MazeCell:
+    def __init__(self, x, y, is_start=False, is_end=False):
+        self.x = x
+        self.y = y
+        self.walls = [True, True, True, True]
+        self.is_start = is_start
+        self.is_end = is_start
+
+    def top_wall(self):
+        return self.walls[0]
+
+    def right_wall(self):
+        return self.walls[1]
+
+    def bottom_wall(self):
+        return self.walls[2]
+
+    def left_wall(self):
+        return self.walls[3]
+
+    def set_start(self):
+        self.is_start = True
+
+    def set_end(self):
+        self.is_end = True
+
+    def add_neighbour(self, pos: (int, int)):
+        if pos[0] == self.x:
+            if pos[1] == self.y + 1:
+                self.walls[2] = False
+            elif pos[1] == self.y - 1:
+                self.walls[0] = False
+        elif pos[1] == self.y:
+            if pos[0] == self.x + 1:
+                print("here")
+                self.walls[1] = False
+            elif pos[0] == self.x - 1:
+                self.walls[3] = False
+
+
+class MazeWall:
+    def __init__(self, start: (int, int), end: (int, int)):
+        self.start = start
+        self.end = end
 
     def draw(self, screen):
-        pygame.draw.rect(screen, MAZE_WALL_COLOUR, self.rect)
+        pygame.draw.line(screen, MAZE_WALL_COLOUR, self.start, self.end, WALL_WIDTH)
 
 
 class Maze:
     def parse_layout_grid(self):
-        for row in range(self.rows):
-            for col in range(self.cols):
-                if self.layout_grid[row][col] == "1":
-                    self.grid[row][col] = MAZE_TILE.WALL
-                elif self.layout_grid[row][col] == "0":
-                    self.grid[row][col] = MAZE_TILE.PATH
-                elif self.layout_grid[row][col] == "*":
-                    self.start = (row, col)
-                elif self.layout_grid[row][col] == ".":
-                    self.end = (row, col)
+        for edge in self.graph_data:
+            a, b = edge.split(" ")
+            a = a.split(",")
+            b = b.split(",")
+            a = (int(a[0]), int(a[1]))
+            b = (int(b[0]), int(b[1]))
+            self.cells[a[0]][a[1]].add_neighbour(b)
+            self.cells[b[0]][b[1]].add_neighbour(a)
 
-    def __init__(self, layout_grid, rows, cols):
-        self.rows = rows
-        self.cols = cols
-        self.layout_grid = layout_grid
-        self.grid = [[None for _ in range(self.cols)] for _ in range(self.rows)]
+    def __init__(self, graph_data, size, canvas_width, canvas_height):
+        self.size = size
+        self.graph_data = graph_data
         self.start = None
         self.end = None
-        self.tiles = []
-        self.parse_layout_grid()
 
-    def populate_tiles(self, tile_size, x_offset, y_offset):
-        for row in range(self.rows):
-            for col in range(self.cols):
-                if self.grid[row][col] == MAZE_TILE.PATH:
-                    continue
-                self.tiles.append(MazeTile(row, col, tile_size, x_offset, y_offset))
+        self.cells = [[MazeCell(i, j) for j in range(self.size)] for i in range(self.size)]
+
+        self.walls = []
+
+        self.walls_width = 0
+        self.px_size = None
+
+        if canvas_width < canvas_height:
+            self.x_offset = MIN_OFFSET
+            self.cell_size = (canvas_width - self.walls_width - MIN_OFFSET) // self.size
+            self.px_size = self.cell_size * self.size + self.walls_width
+            self.y_offset = (canvas_height - self.px_size) // 2 + MIN_OFFSET
+        else:
+            self.y_offset = MIN_OFFSET
+            self.cell_size = (canvas_height - self.walls_width - MIN_OFFSET) // self.size
+            self.px_size = self.cell_size * self.size + self.walls_width
+            self.x_offset = (canvas_width - self.px_size) // 2 + MIN_OFFSET
+
+        self.parse_layout_grid()
+        # self.add_outer_walls()
+        self.add_inner_walls()
+
+    def add_outer_walls(self):
+        corner1 = (self.x_offset - WALL_WIDTH, self.y_offset - WALL_WIDTH)
+        corner2 = (self.x_offset + self.px_size + WALL_WIDTH, self.y_offset - WALL_WIDTH)
+        corner3 = (self.x_offset - WALL_WIDTH, self.y_offset + self.px_size + WALL_WIDTH)
+        corner4 = (self.x_offset + self.px_size + WALL_WIDTH, self.y_offset +
+                   self.px_size + WALL_WIDTH)
+
+        self.walls.append(MazeWall(corner1, corner2))
+        self.walls.append(MazeWall(corner1, corner3))
+        self.walls.append(MazeWall(corner2, corner4))
+        self.walls.append(MazeWall(corner3, corner4))
+
+    def add_cell_walls(self, cell: MazeCell):
+        x = self.x_offset + cell.x * self.cell_size
+        y = self.y_offset + cell.y * self.cell_size
+        if cell.top_wall():
+            self.walls.append(MazeWall((x, y), (x + self.cell_size, y)))
+        if cell.right_wall():
+            print(cell.x, cell.y)
+            self.walls.append(MazeWall((x + self.cell_size, y), (x + self.cell_size, y + self.cell_size)))
+        if cell.bottom_wall():
+            self.walls.append(MazeWall((x, y + self.cell_size), (x + self.cell_size, y + self.cell_size)))
+        if cell.left_wall():
+            self.walls.append(MazeWall((x, y), (x, y + self.cell_size)))
+
+    def add_inner_walls(self):
+        for row in self.cells:
+            for cell in row:
+                self.add_cell_walls(cell)
 
     def draw(self, screen):
-        for tile in self.tiles:
-            tile.draw(screen)
+        for wall in self.walls:
+            wall.draw(screen)
 
 
 class MazeInator:
@@ -67,9 +145,10 @@ class MazeInator:
         maze_gen = Popen([f"./{MAZE_GENERATOR_PATH}", str(self.difficulty)], stdout=PIPE)
         time.sleep(0.1)
         maze_gen_output = open("maze.maze", "r").read()
-        rows, cols = maze_gen_output.split("\n")[0].split(" ")
+        size = maze_gen_output.split("\n")[0]
+        size = int(size)
         maze = maze_gen_output.split("\n")[1:]
-        self.maze = Maze(maze, int(rows), int(cols))
+        self.maze = Maze(maze, size, self.screen_width, self.screen_height)
 
     def __init__(self, screen: pygame.surface.Surface, difficulty, time_limit=15):
 
@@ -80,18 +159,11 @@ class MazeInator:
         self.maze: Maze = None
         self.difficulty = difficulty
 
-        tile_size: int = min(self.screen_width, self.screen_height) // self.difficulty
-        x_offset = (self.screen_width - (tile_size * self.difficulty)) // 2 if self.screen_width > self.screen_height \
-            else 0
-        y_offset = (self.screen_height - (tile_size * self.difficulty)) // 2 if self.screen_height > self.screen_width \
-            else 0
-
         self.time_started = time.time()
         self.time_limit = time_limit
         self.game_over = False
 
         self.generate_maze()
-        self.maze.populate_tiles(tile_size, x_offset, y_offset)
 
     def draw(self):
         self.screen.fill(MAZE_BACKGROUND_COLOUR)
