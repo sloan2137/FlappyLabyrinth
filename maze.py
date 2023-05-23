@@ -2,7 +2,7 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
-DEFAULT_DIFFICULTY = 100
+DEFAULT_DIFFICULTY = 40
 MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
 MAZE_BACKGROUND_COLOUR = (255, 255, 255)
@@ -67,6 +67,8 @@ class MazeWall:
 class Maze:
     def parse_layout_grid(self):
         for edge in self.graph_data:
+            if edge == "" or edge == "\n":
+                continue
             a, b = edge.split(" ")
             a = a.split(",")
             b = b.split(",")
