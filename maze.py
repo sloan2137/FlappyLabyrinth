@@ -50,7 +50,6 @@ class MazeCell:
                 self.walls[0] = False
         elif pos[1] == self.y:
             if pos[0] == self.x + 1:
-                print("here")
                 self.walls[1] = False
             elif pos[0] == self.x - 1:
                 self.walls[3] = False
@@ -122,7 +121,6 @@ class Maze:
         if cell.top_wall():
             self.walls.append(MazeWall((x, y), (x + self.cell_size, y)))
         if cell.right_wall():
-            print(cell.x, cell.y)
             self.walls.append(MazeWall((x + self.cell_size, y), (x + self.cell_size, y + self.cell_size)))
         if cell.bottom_wall():
             self.walls.append(MazeWall((x, y + self.cell_size), (x + self.cell_size, y + self.cell_size)))
