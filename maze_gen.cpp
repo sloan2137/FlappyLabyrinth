@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
     }
 
     file << n << std::endl;
-    // file << start.x << " " << start.y << std::endl;
-    // file << end.x << " " << end.y << std::endl;
+    file << start.x << "," << start.y << std::endl;
+    file << end.x << "," << end.y << std::endl;
 
     std::vector<std::vector<bool>> visited(n, std::vector<bool>(n, false));
 

@@ -2,13 +2,21 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
-DEFAULT_DIFFICULTY = 40
+DEFAULT_DIFFICULTY = 10
 MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
 MAZE_BACKGROUND_COLOUR = (255, 255, 255)
 WALL_WIDTH = 2
 
 MIN_OFFSET = 10
+
+MAZE_RUNNER_SIZE = 10
+MAZE_RUNNER_COLOUR = (255, 0, 0)
+MAZE_RUNNER_SPEED = 1
+
+GOAL_COLOUR = (0, 255, 0)
+
+FONT = "comicsansms"
 
 
 class MAZE_TILE:
@@ -61,7 +69,7 @@ class MazeWall:
         self.end = end
 
     def draw(self, screen):
-        pygame.draw.line(screen, MAZE_WALL_COLOUR, self.start, self.end, WALL_WIDTH)
+        return pygame.draw.line(screen, MAZE_WALL_COLOUR, self.start, self.end, WALL_WIDTH)
 
 
 class Maze:
@@ -77,7 +85,11 @@ class Maze:
             self.cells[a[0]][a[1]].add_neighbour(b)
             self.cells[b[0]][b[1]].add_neighbour(a)
 
-    def __init__(self, graph_data, size, canvas_width, canvas_height):
+    def __init__(self, graph_data, size, canvas_width, canvas_height, start_pos, end_pos):
+        self.start_pos = start_pos
+        self.end_pos = end_pos
+
+
         self.size = size
         self.graph_data = graph_data
         self.start = None
@@ -86,24 +98,27 @@ class Maze:
         self.cells = [[MazeCell(i, j) for j in range(self.size)] for i in range(self.size)]
 
         self.walls = []
+        self.wall_colliders = []
 
         self.walls_width = 0
         self.px_size = None
 
         if canvas_width < canvas_height:
             self.x_offset = MIN_OFFSET
-            self.cell_size = (canvas_width - self.walls_width - MIN_OFFSET) // self.size
+            self.cell_size = (canvas_width - self.walls_width - MIN_OFFSET) // self.size - 1
             self.px_size = self.cell_size * self.size + self.walls_width
             self.y_offset = (canvas_height - self.px_size) // 2 + MIN_OFFSET
         else:
             self.y_offset = MIN_OFFSET
-            self.cell_size = (canvas_height - self.walls_width - MIN_OFFSET) // self.size
+            self.cell_size = (canvas_height - self.walls_width - MIN_OFFSET) // self.size - 1
             self.px_size = self.cell_size * self.size + self.walls_width
             self.x_offset = (canvas_width - self.px_size) // 2 + MIN_OFFSET
 
         self.parse_layout_grid()
         # self.add_outer_walls()
         self.add_inner_walls()
+
+        self.goal_collider = None
 
     def add_outer_walls(self):
         corner1 = (self.x_offset - WALL_WIDTH, self.y_offset - WALL_WIDTH)
@@ -135,8 +150,48 @@ class Maze:
                 self.add_cell_walls(cell)
 
     def draw(self, screen):
+        self.wall_colliders = []
         for wall in self.walls:
-            wall.draw(screen)
+            wall_rect = wall.draw(screen)
+            self.wall_colliders.append(wall_rect)
+        self.draw_goal(screen)
+
+    def get_px_position(self, pos: (int, int)):
+        x = self.x_offset + pos[0] * self.cell_size
+        y = self.y_offset + pos[1] * self.cell_size
+        return x, y
+
+    def draw_goal(self, screen):
+        x, y = self.get_px_position(self.end_pos)
+        self.goal_collider = pygame.draw.circle(screen, GOAL_COLOUR, (x + self.cell_size // 2, y + self.cell_size // 2), self.cell_size // 4)
+
+class MazeRunner:
+    def __init__(self, start_pos: (int, int)):
+        self.start_pos = start_pos
+        self.rect = pygame.Rect(start_pos[0], start_pos[1], MAZE_RUNNER_SIZE, MAZE_RUNNER_SIZE)
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, MAZE_RUNNER_COLOUR, self.rect)
+
+
+    def move(self, dx, dy, wall_colliders):
+        old_pos = self.rect
+        self.rect = self.rect.move(dx, dy)
+        if self.rect.collidelist(wall_colliders) != -1:
+            self.rect = old_pos
+            return False
+
+    def update(self, screen, keys, wall_colliders):
+        if keys[pygame.K_w]:
+            self.move(0, -MAZE_RUNNER_SPEED, wall_colliders)
+        if keys[pygame.K_a]:
+            self.move(-MAZE_RUNNER_SPEED, 0, wall_colliders)
+        if keys[pygame.K_s]:
+            self.move(0, MAZE_RUNNER_SPEED, wall_colliders)
+        if keys[pygame.K_d]:
+            self.move(MAZE_RUNNER_SPEED, 0, wall_colliders)
+
+        self.draw(screen)
 
 
 class MazeInator:
@@ -147,8 +202,14 @@ class MazeInator:
         maze_gen_output = open("maze.maze", "r").read()
         size = maze_gen_output.split("\n")[0]
         size = int(size)
-        maze = maze_gen_output.split("\n")[1:]
-        self.maze = Maze(maze, size, self.screen_width, self.screen_height)
+        start_pos = maze_gen_output.split("\n")[1]
+        start_pos = start_pos.split(",")
+        start_pos = (int(start_pos[0]), int(start_pos[1]))
+        goal = maze_gen_output.split("\n")[2]
+        goal = goal.split(",")
+        goal = (int(goal[0]), int(goal[1]))
+        maze = maze_gen_output.split("\n")[3:]
+        self.maze = Maze(maze, size, self.screen_width, self.screen_height, start_pos, goal)
 
     def __init__(self, screen: pygame.surface.Surface, difficulty, time_limit=15):
 
@@ -161,22 +222,63 @@ class MazeInator:
 
         self.time_started = time.time()
         self.time_limit = time_limit
-        self.game_over = False
+        self.game_running = True
+        self.won = False
 
         self.generate_maze()
+
+        px_position = self.maze.get_px_position(self.maze.start_pos)
+        x = px_position[0] + self.maze.cell_size // 2 - MAZE_RUNNER_SIZE // 2
+        y = px_position[1] + self.maze.cell_size // 2 - MAZE_RUNNER_SIZE // 2
+        self.runner = MazeRunner((x, y))
+
+
+    def draw_message(self, message: str, colour: (int, int, int)):
+        self.screen.fill(MAZE_BACKGROUND_COLOUR)
+        font = pygame.font.SysFont(FONT, 72)
+        text = font.render(message, True, colour)
+        text_rect = text.get_rect()
+        text_rect.center = (self.screen_width // 2, self.screen_height // 2)
+        self.screen.blit(text, text_rect)
+
+    def draw_timer(self):
+        font = pygame.font.SysFont(FONT, 20)
+        seconds_elapsed = time.time() - self.time_started
+        time_left = self.time_limit - seconds_elapsed
+        timer = float(time_left)
+        timer = round(timer, 2)
+        timer = str(timer)
+        text = font.render(timer, True, (0, 0, 0))
+        text_rect = text.get_rect()
+        text_rect.center = (self.screen_width - 50, 50)
+        self.screen.blit(text, text_rect)
 
     def draw(self):
         self.screen.fill(MAZE_BACKGROUND_COLOUR)
         self.maze.draw(self.screen)
+        self.draw_timer()
 
     def update(self):
         current_time = time.time()
         seconds_elapsed = current_time - self.time_started
-        if seconds_elapsed >= self.time_limit:
-            self.game_over = True
-        else:
+        if seconds_elapsed > self.time_limit:
+            self.game_running = False
+            self.won = False
+        if self.game_running:
             self.draw()
+            self.runner.update(self.screen, pygame.key.get_pressed(), self.maze.wall_colliders)
+            if self.runner.rect.colliderect(self.maze.goal_collider):
+                self.game_running = False
+                self.won = True
 
+            return 0
+        else:
+            if self.won:
+                self.draw_message("You won!", (0, 128, 0))
+                return 1
+            else:
+                self.draw_message("Time's up!", (255, 0, 0))
+                return -1
 
 def main():
     pygame.init()
@@ -189,7 +291,7 @@ def main():
                 pygame.quit()
                 return
 
-        maze.update()
+        print(maze.update())
         pygame.display.flip()
 
 
