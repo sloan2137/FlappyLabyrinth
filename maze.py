@@ -195,6 +195,9 @@ class MazeRunner:
 
 
 class MazeInator:
+    """
+    Class that handles the maze minigame
+    """
 
     def generate_maze(self):
         maze_gen = Popen([f"./{MAZE_GENERATOR_PATH}", str(self.difficulty)], stdout=PIPE)
@@ -212,6 +215,11 @@ class MazeInator:
         self.maze = Maze(maze, size, self.screen_width, self.screen_height, start_pos, goal)
 
     def __init__(self, screen: pygame.surface.Surface, difficulty, time_limit=15):
+        """
+        :param screen: The PyGame screen to draw to
+        :param difficulty: The difficulty of the maze (the dimensions of the maze)
+        :param time_limit: Time that the player has to solve the maze, in seconds
+        """
 
         self.screen = screen
         self.screen_width = screen.get_width()
@@ -258,7 +266,11 @@ class MazeInator:
         self.maze.draw(self.screen)
         self.draw_timer()
 
-    def update(self):
+    def update(self) -> int:
+        """
+        Function that should be called each frame to update the maze minigame
+        :return: Returns 0 if game is running, 1 if maze has been solved, and -1 if the player has run out of time
+        """
         current_time = time.time()
         seconds_elapsed = current_time - self.time_started
         if seconds_elapsed > self.time_limit:
@@ -281,18 +293,27 @@ class MazeInator:
                 return -1
 
 def main():
+    # Demo usage of MazeInator class. Should be used in a similar way
+    # the following code snippet will be commented to demonstrate how to use the MazeInator class
+
+    # Here is the usual PyGame initialization
     pygame.init()
     screen = pygame.display.set_mode((1400, 1000))
     pygame.display.set_caption("Maze")
-    maze = MazeInator(screen, DEFAULT_DIFFICULTY)
+
+    maze = MazeInator(screen, DEFAULT_DIFFICULTY, 20)  # Creating the MazeInator object.
+    # Documented via docstring
+
     while True:
+        # Usual PyGame quit handling. Game logic other than the maze minigame would also be in this section
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
 
-        print(maze.update())
-        pygame.display.flip()
+        maze.update()  # Calling the update method. This is the only method that needs to be called. Returns
+        # game state (0 - running, 1 - won, -1 - lost).
+        pygame.display.flip()  # Usual PyGame stuff
 
 
 if __name__ == '__main__':
