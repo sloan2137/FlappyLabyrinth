@@ -273,7 +273,7 @@ class MazeInator:
         """
         current_time = time.time()
         seconds_elapsed = current_time - self.time_started
-        if seconds_elapsed > self.time_limit:
+        if seconds_elapsed > self.time_limit and not self.won:
             self.game_running = False
             self.won = False
         if self.game_running:
