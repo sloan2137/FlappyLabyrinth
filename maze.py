@@ -2,6 +2,8 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
+import draw_text
+
 DEFAULT_DIFFICULTY = 10
 MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
@@ -254,24 +256,15 @@ class MazeInator:
         self.runner = MazeRunner((x, y))
 
     def draw_message(self, message: str, colour: (int, int, int)):
-        self.screen.fill(MAZE_BACKGROUND_COLOUR)
-        font = pygame.font.SysFont(FONT, 72)
-        text = font.render(message, True, colour)
-        text_rect = text.get_rect()
-        text_rect.center = (self.screen_width // 2, self.screen_height // 2)
-        self.screen.blit(text, text_rect)
+        draw_text.fullscreen(self.screen, message, colour, MAZE_BACKGROUND_COLOUR, FONT)
 
     def draw_timer(self):
-        font = pygame.font.SysFont(FONT, 20)
         seconds_elapsed = time.time() - self.time_started
         time_left = self.time_limit - seconds_elapsed
         timer = float(time_left)
         timer = round(timer, 2)
         timer = str(timer)
-        text = font.render(timer, True, (0, 0, 0))
-        text_rect = text.get_rect()
-        text_rect.center = (self.screen_width - 50, 50)
-        self.screen.blit(text, text_rect)
+        draw_text.draw_in_corner(self.screen, timer, draw_text.CORNERS.TOP_RIGHT, (255, 255, 255), FONT)
 
     def draw(self):
         self.screen.fill(MAZE_BACKGROUND_COLOUR)
