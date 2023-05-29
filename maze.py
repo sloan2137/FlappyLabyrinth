@@ -18,11 +18,23 @@ GOAL_COLOUR = (0, 255, 0)
 
 FONT = "comicsansms"
 
+UP_CONTROLS = [pygame.K_UP, pygame.K_w]
+LEFT_CONTROLS = [pygame.K_LEFT, pygame.K_a]
+DOWN_CONTROLS = [pygame.K_DOWN, pygame.K_s]
+RIGHT_CONTROLS = [pygame.K_RIGHT, pygame.K_d]
+
 
 class MAZE_TILE:
     WALL = 0
     PATH = 1
 
+
+
+def key_from_set_pressed(keys, valid_keys_set):
+    for key in valid_keys_set:
+        if keys[key]:
+            return True
+    return False
 
 class MazeCell:
     def __init__(self, x, y, is_start=False, is_end=False):
@@ -88,7 +100,6 @@ class Maze:
     def __init__(self, graph_data, size, canvas_width, canvas_height, start_pos, end_pos):
         self.start_pos = start_pos
         self.end_pos = end_pos
-
 
         self.size = size
         self.graph_data = graph_data
@@ -163,7 +174,9 @@ class Maze:
 
     def draw_goal(self, screen):
         x, y = self.get_px_position(self.end_pos)
-        self.goal_collider = pygame.draw.circle(screen, GOAL_COLOUR, (x + self.cell_size // 2, y + self.cell_size // 2), self.cell_size // 4)
+        self.goal_collider = pygame.draw.circle(screen, GOAL_COLOUR, (x + self.cell_size // 2, y + self.cell_size // 2),
+                                                self.cell_size // 4)
+
 
 class MazeRunner:
     def __init__(self, start_pos: (int, int)):
@@ -173,7 +186,6 @@ class MazeRunner:
     def draw(self, screen):
         pygame.draw.rect(screen, MAZE_RUNNER_COLOUR, self.rect)
 
-
     def move(self, dx, dy, wall_colliders):
         old_pos = self.rect
         self.rect = self.rect.move(dx, dy)
@@ -181,14 +193,15 @@ class MazeRunner:
             self.rect = old_pos
             return False
 
+
     def update(self, screen, keys, wall_colliders):
-        if keys[pygame.K_w]:
+        if key_from_set_pressed(keys, UP_CONTROLS):
             self.move(0, -MAZE_RUNNER_SPEED, wall_colliders)
-        if keys[pygame.K_a]:
+        if key_from_set_pressed(keys, LEFT_CONTROLS):
             self.move(-MAZE_RUNNER_SPEED, 0, wall_colliders)
-        if keys[pygame.K_s]:
+        if key_from_set_pressed(keys, DOWN_CONTROLS):
             self.move(0, MAZE_RUNNER_SPEED, wall_colliders)
-        if keys[pygame.K_d]:
+        if key_from_set_pressed(keys, RIGHT_CONTROLS):
             self.move(MAZE_RUNNER_SPEED, 0, wall_colliders)
 
         self.draw(screen)
@@ -240,7 +253,6 @@ class MazeInator:
         y = px_position[1] + self.maze.cell_size // 2 - MAZE_RUNNER_SIZE // 2
         self.runner = MazeRunner((x, y))
 
-
     def draw_message(self, message: str, colour: (int, int, int)):
         self.screen.fill(MAZE_BACKGROUND_COLOUR)
         font = pygame.font.SysFont(FONT, 72)
@@ -291,6 +303,7 @@ class MazeInator:
             else:
                 self.draw_message("Time's up!", (255, 0, 0))
                 return -1
+
 
 def main():
     # Demo usage of MazeInator class. Should be used in a similar way
