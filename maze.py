@@ -2,6 +2,7 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
+import fps_monitor
 import draw_text
 
 DEFAULT_DIFFICULTY = 10
@@ -309,6 +310,7 @@ def main():
 
     maze = MazeInator(screen, DEFAULT_DIFFICULTY, 20)  # Creating the MazeInator object.
     # Documented via docstring
+    fps = fps_monitor.FPSMonitor(screen)  # Creating the FPS monitor
 
     while True:
         # Usual PyGame quit handling. Game logic other than the maze minigame would also be in this section
@@ -317,8 +319,10 @@ def main():
                 pygame.quit()
                 return
 
+
         maze.update()  # Calling the update method. This is the only method that needs to be called. Returns
         # game state (0 - running, 1 - won, -1 - lost).
+        fps.update()  # Updating the FPS monitor
         pygame.display.flip()  # Usual PyGame stuff
 
 
