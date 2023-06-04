@@ -2,6 +2,9 @@ import pygame
 from subprocess import Popen, PIPE
 import time
 
+import fps_monitor
+import draw_text
+
 DEFAULT_DIFFICULTY = 10
 MAZE_GENERATOR_PATH = "maze_gen.exe"
 MAZE_WALL_COLOUR = (0, 0, 0)
@@ -18,11 +21,23 @@ GOAL_COLOUR = (0, 255, 0)
 
 FONT = "comicsansms"
 
+UP_CONTROLS = [pygame.K_UP, pygame.K_w]
+LEFT_CONTROLS = [pygame.K_LEFT, pygame.K_a]
+DOWN_CONTROLS = [pygame.K_DOWN, pygame.K_s]
+RIGHT_CONTROLS = [pygame.K_RIGHT, pygame.K_d]
+
 
 class MAZE_TILE:
     WALL = 0
     PATH = 1
 
+
+
+def key_from_set_pressed(keys, valid_keys_set):
+    for key in valid_keys_set:
+        if keys[key]:
+            return True
+    return False
 
 class MazeCell:
     def __init__(self, x, y, is_start=False, is_end=False):
@@ -88,7 +103,6 @@ class Maze:
     def __init__(self, graph_data, size, canvas_width, canvas_height, start_pos, end_pos):
         self.start_pos = start_pos
         self.end_pos = end_pos
-
 
         self.size = size
         self.graph_data = graph_data
@@ -163,7 +177,9 @@ class Maze:
 
     def draw_goal(self, screen):
         x, y = self.get_px_position(self.end_pos)
-        self.goal_collider = pygame.draw.circle(screen, GOAL_COLOUR, (x + self.cell_size // 2, y + self.cell_size // 2), self.cell_size // 4)
+        self.goal_collider = pygame.draw.circle(screen, GOAL_COLOUR, (x + self.cell_size // 2, y + self.cell_size // 2),
+                                                self.cell_size // 4)
+
 
 class MazeRunner:
     def __init__(self, start_pos: (int, int)):
@@ -173,7 +189,6 @@ class MazeRunner:
     def draw(self, screen):
         pygame.draw.rect(screen, MAZE_RUNNER_COLOUR, self.rect)
 
-
     def move(self, dx, dy, wall_colliders):
         old_pos = self.rect
         self.rect = self.rect.move(dx, dy)
@@ -181,14 +196,15 @@ class MazeRunner:
             self.rect = old_pos
             return False
 
+
     def update(self, screen, keys, wall_colliders):
-        if keys[pygame.K_w]:
+        if key_from_set_pressed(keys, UP_CONTROLS):
             self.move(0, -MAZE_RUNNER_SPEED, wall_colliders)
-        if keys[pygame.K_a]:
+        if key_from_set_pressed(keys, LEFT_CONTROLS):
             self.move(-MAZE_RUNNER_SPEED, 0, wall_colliders)
-        if keys[pygame.K_s]:
+        if key_from_set_pressed(keys, DOWN_CONTROLS):
             self.move(0, MAZE_RUNNER_SPEED, wall_colliders)
-        if keys[pygame.K_d]:
+        if key_from_set_pressed(keys, RIGHT_CONTROLS):
             self.move(MAZE_RUNNER_SPEED, 0, wall_colliders)
 
         self.draw(screen)
@@ -240,26 +256,16 @@ class MazeInator:
         y = px_position[1] + self.maze.cell_size // 2 - MAZE_RUNNER_SIZE // 2
         self.runner = MazeRunner((x, y))
 
-
     def draw_message(self, message: str, colour: (int, int, int)):
-        self.screen.fill(MAZE_BACKGROUND_COLOUR)
-        font = pygame.font.SysFont(FONT, 72)
-        text = font.render(message, True, colour)
-        text_rect = text.get_rect()
-        text_rect.center = (self.screen_width // 2, self.screen_height // 2)
-        self.screen.blit(text, text_rect)
+        draw_text.fullscreen(self.screen, message, colour, MAZE_BACKGROUND_COLOUR, FONT)
 
     def draw_timer(self):
-        font = pygame.font.SysFont(FONT, 20)
         seconds_elapsed = time.time() - self.time_started
         time_left = self.time_limit - seconds_elapsed
         timer = float(time_left)
         timer = round(timer, 2)
         timer = str(timer)
-        text = font.render(timer, True, (0, 0, 0))
-        text_rect = text.get_rect()
-        text_rect.center = (self.screen_width - 50, 50)
-        self.screen.blit(text, text_rect)
+        draw_text.draw_in_corner(self.screen, timer, draw_text.CORNERS.TOP_RIGHT, (255, 255, 255), FONT)
 
     def draw(self):
         self.screen.fill(MAZE_BACKGROUND_COLOUR)
@@ -292,6 +298,7 @@ class MazeInator:
                 self.draw_message("Time's up!", (255, 0, 0))
                 return -1
 
+
 def main():
     # Demo usage of MazeInator class. Should be used in a similar way
     # the following code snippet will be commented to demonstrate how to use the MazeInator class
@@ -303,6 +310,7 @@ def main():
 
     maze = MazeInator(screen, DEFAULT_DIFFICULTY, 20)  # Creating the MazeInator object.
     # Documented via docstring
+    fps = fps_monitor.FPSMonitor(screen)  # Creating the FPS monitor
 
     while True:
         # Usual PyGame quit handling. Game logic other than the maze minigame would also be in this section
@@ -311,8 +319,10 @@ def main():
                 pygame.quit()
                 return
 
+
         maze.update()  # Calling the update method. This is the only method that needs to be called. Returns
         # game state (0 - running, 1 - won, -1 - lost).
+        fps.update()  # Updating the FPS monitor
         pygame.display.flip()  # Usual PyGame stuff
 
 

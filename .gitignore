@@ -2,3 +2,4 @@
 maze_gen.exe
 maze.maze
 .vscode/*
+__pycache__/*
