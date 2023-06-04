@@ -43,12 +43,26 @@ class Bird(pygame.sprite.Sprite):
         self.rect=self.image.get_rect()
         self.rect.center=bird_start_pos
         self.image_index=0
+        self.vel=0
+        self.jump=False
     
-    def update(self):
+    def update(self, user_input):
         self.image_index+=1
         if self.image_index>=30:
             self.image_index=0
         self.image=bird_images[self.image_index//10]
+
+        self.vel+=0.5
+        if self.vel>7:
+            self.vel=7
+        if self.rect.y<500:
+            self.rect.y+=int(self.vel)
+        if self.vel==0:
+            self.jump=False
+
+        if user_input[pygame.K_SPACE] and not self.jump and self.rect.y>0:
+            self.jump=True
+            self.vel=-7
 
 def main():
 
@@ -70,13 +84,15 @@ def main():
 
         if len(ground)<=2:
             ground.add(Ground(screen_width, y_ground))
+
+        user_input=pygame.key.get_pressed()
         
         ground.draw(screen)
         bird.draw(screen)
 
 
         ground.update()
-        bird.update()
+        bird.update(user_input)
 
         clock.tick(60)
         pygame.display.update()
