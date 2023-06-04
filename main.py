@@ -14,6 +14,8 @@ ground_image=pygame.image.load("assets1/ground.png")
 bird_images=[pygame.image.load("assets1/bird_down.png"),
              pygame.image.load("assets1/bird_mid.png"),
              pygame.image.load("assets1/bird_up.png")]
+top_obstacle_image=pygame.image.load("assets1/pipe_top.png")
+bottom_obstacle_image=pygame.image.load("assets1/pipe_bottom.png")
 
 scroll_speed=1
 
@@ -64,6 +66,24 @@ class Bird(pygame.sprite.Sprite):
             self.jump=True
             self.vel=-7
 
+class Obstacle(pygame.sprite.Sprite):
+    def __init__(self, x, y, image):
+        pygame.sprite.Sprite.__init__(self)
+        self.image=image
+        self.rect=self.image.get_rect()
+        self.rect.x, self.rect.y=x, y
+
+    def update(self):
+        self.rect.x-=scroll_speed
+        if self.rect.x<=-screen_width:
+            self.kill()
+
+def exit_game():
+    for event in pygame.event.get():
+        if event.type==pygame.QUIT:
+            pygame.quit()
+            exit()
+
 def main():
 
     x_ground, y_ground=0,520
@@ -72,6 +92,9 @@ def main():
 
     bird=pygame.sprite.GroupSingle()
     bird.add(Bird())
+
+    obstacle_timer=0
+    obstacles=pygame.sprite.Group()
 
     run=True
     while run:
@@ -86,13 +109,24 @@ def main():
             ground.add(Ground(screen_width, y_ground))
 
         user_input=pygame.key.get_pressed()
+
+        if obstacle_timer<=0:
+            x_top, x_bottom=550, 550
+            y_top=random.randint(-600, -480)
+            y_bottom=y_top+random.randint(90,130)+bottom_obstacle_image.get_height()
+            obstacles.add(Obstacle(x_top, y_top, top_obstacle_image))
+            obstacles.add(Obstacle(x_bottom, y_bottom, bottom_obstacle_image))
+            obstacle_timer=random.randint(225,260)
+        obstacle_timer-=1
         
         ground.draw(screen)
         bird.draw(screen)
-
+        obstacles.draw(screen)
 
         ground.update()
         bird.update(user_input)
+        obstacles.update()
+
 
         clock.tick(60)
         pygame.display.update()
