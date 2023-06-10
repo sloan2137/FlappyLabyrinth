@@ -17,11 +17,13 @@ bird_images=[pygame.image.load("assets1/bird_down.png"),
 top_obstacle_image=pygame.image.load("assets1/pipe_top.png")
 bottom_obstacle_image=pygame.image.load("assets1/pipe_bottom.png")
 game_over_image=pygame.image.load("assets1/game_over.png")
+start_image=pygame.image.load("assets1/start.png")
 
 scroll_speed=2
 bird_start_pos=(100,250)
 score=0
 font=pygame.font.SysFont('Segoe', 26)
+game_stopped=True
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self):
@@ -140,10 +142,10 @@ def main():
             bird.sprite.alive=False
             if collision_ground:
                 screen.blit(game_over_image,(screen_width//2 - game_over_image.get_width()//2, 
-                                            screen_height//2 - game_over_image.get_height()//2))
+                                             screen_height//2 - game_over_image.get_height()//2))
                 if user_input[pygame.K_r]:
                     score=0
-                    main()
+                    
                     break
 
         if obstacle_timer<=0 and bird.sprite.alive:
@@ -157,4 +159,24 @@ def main():
 
         clock.tick(60)
         pygame.display.update()
-main()   
+
+def menu():
+    global game_stopped
+
+    while game_stopped:
+        exit_game()
+
+        screen.fill((0,0,0))
+        screen.blit(sky_image, (0,0))
+        screen.blit(ground_image, Ground(0,520))
+        screen.blit(bird_images[0], (100,250))
+        screen.blit(start_image,(screen_width//2 - start_image.get_width()//2, 
+                                     screen_height//2 - start_image.get_height()//2))
+        
+        user_input=pygame.key.get_pressed()
+        if user_input[pygame.K_SPACE]:
+            main()
+        
+        pygame.display.update()
+
+menu()
