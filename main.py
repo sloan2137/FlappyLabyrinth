@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 from sys import exit
 import random
@@ -137,8 +139,15 @@ def main():
 
     agent = pygame.sprite.Group()
 
+    god_mode = False
+    args = sys.argv
+    if len(args) > 1:
+        god_mode = args[1] == 'walczuk'
+
     run = True
     while run:
+        if god_mode:
+            bird.sprite.alive = True
 
         exit_game()
 
