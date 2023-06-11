@@ -18,12 +18,17 @@ top_obstacle_image=pygame.image.load("assets1/pipe_top.png")
 bottom_obstacle_image=pygame.image.load("assets1/pipe_bottom.png")
 game_over_image=pygame.image.load("assets1/game_over.png")
 start_image=pygame.image.load("assets1/start.png")
+agent_image=pygame.image.load("assets1/bird_down.png")
+
+freq_diff_x, freq_diff_y=2,3
 
 scroll_speed=2
 bird_start_pos=(100,250)
 score=0
-font=pygame.font.SysFont('Segoe', 26)
+font=pygame.font.SysFont('Segoe', 25)
 game_stopped=True
+timer=0
+appearing_frequency=random.randint(freq_diff_x, freq_diff_y)
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self):
@@ -91,6 +96,18 @@ class Ground(pygame.sprite.Sprite):
         if self.rect.x<=-screen_width:
             self.kill()
 
+class Agent(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image=agent_image
+        self.rect=self.image.get_rect()
+        self.rect.x, self.rect.y=x, y
+    
+    def update(self):
+        self.rect.x-=scroll_speed
+        if self.rect.x<=-screen_width:
+            self.kill()
+
 def exit_game():
     for event in pygame.event.get():
         if event.type==pygame.QUIT:
@@ -99,6 +116,8 @@ def exit_game():
 
 def main():
     global score
+    global timer
+    global appearing_frequency
 
     bird=pygame.sprite.GroupSingle()
     bird.add(Bird())
@@ -109,6 +128,8 @@ def main():
     x_ground, y_ground=0,520
     ground=pygame.sprite.Group()
     ground.add(Ground(x_ground, y_ground))
+
+    agent=pygame.sprite.Group()
 
     run=True
     while run:
@@ -127,13 +148,15 @@ def main():
         obstacles.draw(screen)
         ground.draw(screen)
         bird.draw(screen)
+        agent.draw(screen)
 
         score_text=font.render('Score: ' + str(score), True, pygame.Color(255, 255, 255))
         screen.blit(score_text, (20,20))
 
-        if bird.sprite.alive:
+        if bird.sprite.alive:   
             ground.update()
             obstacles.update()
+            agent.update()
         bird.update(user_input)
 
         collision_obstacles=pygame.sprite.spritecollide(bird.sprites()[0], obstacles, False)
@@ -145,16 +168,28 @@ def main():
                                              screen_height//2 - game_over_image.get_height()//2))
                 if user_input[pygame.K_r]:
                     score=0
-                    
                     break
 
-        if obstacle_timer<=0 and bird.sprite.alive:
+        if bird.sprite.alive and obstacle_timer<=0:
+            timer+=1
             x_top, x_bottom=550, 550
             y_top=random.randint(-600, -480)
             y_bottom=y_top+random.randint(90,130)+bottom_obstacle_image.get_height()
             obstacles.add(Obstacle(x_top, y_top, top_obstacle_image, 'top'))
             obstacles.add(Obstacle(x_bottom, y_bottom, bottom_obstacle_image, 'bottom'))
-            obstacle_timer=random.randint(110,150) #tu decyduje odleglosc
+            
+            if timer==appearing_frequency:
+                obstacle_timer=242
+                 
+                appearing_frequency=random.randint(freq_diff_x, freq_diff_y)
+                timer=0
+
+                x_agent, y_agent=780, 495
+                agent.add(Agent(x_agent, y_agent))
+
+            else:
+                obstacle_timer=random.randint(90,120)
+        
         obstacle_timer-=1
 
         clock.tick(60)
