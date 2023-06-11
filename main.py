@@ -3,6 +3,9 @@ import sys
 import pygame
 from sys import exit
 import random
+import time
+
+import maze as mz
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -31,6 +34,10 @@ font = pygame.font.SysFont('Segoe', 25)
 game_stopped = True
 timer = 0
 appearing_frequency = random.randint(freq_diff_x, freq_diff_y)
+
+MAZE_START_SIZE = 10
+MAZE_SIZE_INCREMENT = 2
+MAZE_TIME_LIMIT = 20
 
 
 class Bird(pygame.sprite.Sprite):
@@ -144,6 +151,11 @@ def main():
     if len(args) > 1:
         god_mode = args[1] == 'walczuk'
 
+    maze_launched = 0
+    maze_solved = 0
+
+    after_maze = False
+
     run = True
     while run:
         if god_mode:
@@ -167,6 +179,17 @@ def main():
 
         score_text = font.render('Score: ' + str(score), True, pygame.Color(255, 255, 255))
         screen.blit(score_text, (20, 20))
+        maze_solved_text = font.render('Maze solved: ' + str(maze_solved), True, pygame.Color(255, 255, 255))
+        screen.blit(maze_solved_text, (20, 50))
+
+        if after_maze:
+            pygame.display.update()
+            after_maze = False
+            while True:
+                user_input = pygame.key.get_pressed()
+                exit_game()
+                if user_input[pygame.K_SPACE]:
+                    break
 
         if bird.sprite.alive:
             ground.update()
@@ -207,10 +230,24 @@ def main():
 
         obstacle_timer -= 1
 
-        # collision_agent=pygame.sprite.spritecollide(bird.sprites()[0], agent, False)
+        collision_agent = pygame.sprite.spritecollide(bird.sprites()[0], agent, False)
 
-        # if collision_agent:
-        # TU ZRÓB ZEBY LABIRYTN WLACZALO
+        if collision_agent:
+            print('Agent collision')
+            maze = mz.MazeInator(screen, MAZE_START_SIZE + MAZE_SIZE_INCREMENT * maze_launched, MAZE_TIME_LIMIT)
+            maze_launched += 1
+            maze_status = maze.update()
+            while maze_status == 0:
+                exit_game()
+                maze_status = maze.update()
+                pygame.display.update()
+            if maze_status == 1:
+                maze_solved += 1
+                bird.sprite.alive = True
+                score += 1
+            time.sleep(1)
+            after_maze = True
+            agent.sprites()[0].kill()
 
         clock.tick(60)
         pygame.display.update()

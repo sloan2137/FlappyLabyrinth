@@ -15,7 +15,7 @@ MIN_OFFSET = 10
 
 MAZE_RUNNER_SIZE = 10
 MAZE_RUNNER_COLOUR = (255, 0, 0)
-MAZE_RUNNER_SPEED = 1
+MAZE_RUNNER_SPEED = 5
 
 GOAL_COLOUR = (0, 255, 0)
 
@@ -25,6 +25,8 @@ UP_CONTROLS = [pygame.K_UP, pygame.K_w]
 LEFT_CONTROLS = [pygame.K_LEFT, pygame.K_a]
 DOWN_CONTROLS = [pygame.K_DOWN, pygame.K_s]
 RIGHT_CONTROLS = [pygame.K_RIGHT, pygame.K_d]
+
+MAX_FRAME_RATE = 60
 
 
 class MAZE_TILE:
@@ -249,6 +251,8 @@ class MazeInator:
         self.game_running = True
         self.won = False
 
+        self.clock = pygame.time.Clock()
+
         self.generate_maze()
 
         px_position = self.maze.get_px_position(self.maze.start_pos)
@@ -289,6 +293,7 @@ class MazeInator:
                 self.game_running = False
                 self.won = True
 
+            self.clock.tick(MAX_FRAME_RATE)
             return 0
         else:
             if self.won:
