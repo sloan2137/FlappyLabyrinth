@@ -18,9 +18,9 @@ top_obstacle_image=pygame.image.load("assets1/pipe_top.png")
 bottom_obstacle_image=pygame.image.load("assets1/pipe_bottom.png")
 game_over_image=pygame.image.load("assets1/game_over.png")
 start_image=pygame.image.load("assets1/start.png")
-agent_image=pygame.image.load("assets1/bird_down.png")
+agent_image=pygame.image.load("assets1/agent.png")
 
-freq_diff_x, freq_diff_y=2,6
+freq_diff_x, freq_diff_y=2,4
 
 scroll_speed=2
 bird_start_pos=(100,250)
@@ -184,18 +184,13 @@ def main():
                 appearing_frequency=random.randint(freq_diff_x, freq_diff_y)
                 timer=0
 
-                x_agent, y_agent=780, 495
+                x_agent, y_agent=790, 380
                 agent.add(Agent(x_agent, y_agent))
 
             else:
                 obstacle_timer=random.randint(90,120)
         
         obstacle_timer-=1
-
-        #collision_agent=pygame.sprite.spritecollide(bird.sprites()[0], agent, False)
-        
-        #if collision_agent:
-            #TU ZRÓB ZEBY LABIRYTN WLACZALO
 
         clock.tick(60)
         pygame.display.update()
@@ -207,11 +202,7 @@ def menu():
         exit_game()
 
         screen.fill((0,0,0))
-        screen.blit(sky_image, (0,0))
-        screen.blit(ground_image, Ground(0,520))
-        screen.blit(bird_images[0], (100,250))
-        screen.blit(start_image,(screen_width//2 - start_image.get_width()//2, 
-                                     screen_height//2 - start_image.get_height()//2))
+        screen.blit(start_image, (0,0))
         
         user_input=pygame.key.get_pressed()
         if user_input[pygame.K_SPACE]:
