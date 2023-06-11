@@ -233,7 +233,6 @@ def main():
         collision_agent = pygame.sprite.spritecollide(bird.sprites()[0], agent, False)
 
         if collision_agent:
-            print('Agent collision')
             maze = mz.MazeInator(screen, MAZE_START_SIZE + MAZE_SIZE_INCREMENT * maze_launched, MAZE_TIME_LIMIT)
             maze_launched += 1
             maze_status = maze.update()
