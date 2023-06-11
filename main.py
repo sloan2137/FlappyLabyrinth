@@ -20,7 +20,7 @@ game_over_image=pygame.image.load("assets1/game_over.png")
 start_image=pygame.image.load("assets1/start.png")
 agent_image=pygame.image.load("assets1/bird_down.png")
 
-freq_diff_x, freq_diff_y=2,3
+freq_diff_x, freq_diff_y=2,6
 
 scroll_speed=2
 bird_start_pos=(100,250)
@@ -191,6 +191,11 @@ def main():
                 obstacle_timer=random.randint(90,120)
         
         obstacle_timer-=1
+
+        #collision_agent=pygame.sprite.spritecollide(bird.sprites()[0], agent, False)
+        
+        #if collision_agent:
+            #TU ZRÓB ZEBY LABIRYTN WLACZALO
 
         clock.tick(60)
         pygame.display.update()
