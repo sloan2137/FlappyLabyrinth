@@ -21,11 +21,17 @@ bird_images = [pygame.image.load("assets1/bird_down.png"),
                pygame.image.load("assets1/bird_up.png")]
 top_obstacle_image = pygame.image.load("assets1/pipe_top.png")
 bottom_obstacle_image = pygame.image.load("assets1/pipe_bottom.png")
-game_over_image = pygame.image.load("assets1/game_over.png")
+game_over_image = pygame.image.load("assets1/bad_end.png")
+good_over_image = pygame.image.load("assets1/good_over.png")
 start_image = pygame.image.load("assets1/start.png")
 agent_image = pygame.image.load("assets1/agent.png")
+coin_image = pygame.image.load("assets1/coin.png")
 
+MAZE_START_SIZE = 10
+MAZE_SIZE_INCREMENT = 2
+MAZE_TIME_LIMIT = 20
 freq_diff_x, freq_diff_y = 2, 6
+coins_needed=3
 
 scroll_speed = 2
 bird_start_pos = (100, 250)
@@ -34,11 +40,6 @@ font = pygame.font.SysFont('Segoe', 25)
 game_stopped = True
 timer = 0
 appearing_frequency = random.randint(freq_diff_x, freq_diff_y)
-
-MAZE_START_SIZE = 10
-MAZE_SIZE_INCREMENT = 2
-MAZE_TIME_LIMIT = 20
-
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self):
@@ -133,6 +134,7 @@ def main():
     global score
     global timer
     global appearing_frequency
+    last_score=-1
 
     bird = pygame.sprite.GroupSingle()
     bird.add(Bird())
@@ -155,6 +157,7 @@ def main():
     maze_solved = 0
 
     after_maze = False
+    after_good_end=False
 
     run = True
     while run:
@@ -177,10 +180,9 @@ def main():
         bird.draw(screen)
         agent.draw(screen)
 
-        score_text = font.render('Score: ' + str(score), True, pygame.Color(255, 255, 255))
-        screen.blit(score_text, (20, 20))
-        maze_solved_text = font.render('Maze solved: ' + str(maze_solved), True, pygame.Color(255, 255, 255))
-        screen.blit(maze_solved_text, (20, 50))
+        screen.blit(coin_image,(0,5))
+        maze_solved_text = font.render('x' + str(maze_solved), True, pygame.Color(255, 255, 255))
+        screen.blit(maze_solved_text, (35, 13))
 
         if after_maze:
             pygame.display.update()
@@ -199,14 +201,28 @@ def main():
 
         collision_obstacles = pygame.sprite.spritecollide(bird.sprites()[0], obstacles, False)
         collision_ground = pygame.sprite.spritecollide(bird.sprites()[0], ground, False)
-        if collision_obstacles or collision_ground:
+        if (collision_obstacles or collision_ground) and score!=last_score and not after_good_end:
+            if maze_solved>0:
+                maze_solved-=1
+                last_score=score 
+                after_maze=True
+                
+            else:
+                bird.sprite.alive = False
+                if collision_ground:
+                    screen.blit(game_over_image, (0,0))
+                    if user_input[pygame.K_r]:
+                        score = 0
+                        break
+        
+        if maze_solved==coins_needed:
             bird.sprite.alive = False
-            if collision_ground:
-                screen.blit(game_over_image, (screen_width // 2 - game_over_image.get_width() // 2,
-                                              screen_height // 2 - game_over_image.get_height() // 2))
-                if user_input[pygame.K_r]:
-                    score = 0
-                    break
+            screen.blit(good_over_image, (0,0))
+            after_good_end=True
+            if user_input[pygame.K_r]:
+                score = 0
+                after_good_end=False
+                break
 
         if bird.sprite.alive and obstacle_timer <= 0:
             timer += 1
@@ -222,7 +238,7 @@ def main():
                 appearing_frequency = random.randint(freq_diff_x, freq_diff_y)
                 timer = 0
 
-                x_agent, y_agent = 790, 380
+                x_agent, y_agent = 790, 420
                 agent.add(Agent(x_agent, y_agent))
 
             else:
@@ -233,7 +249,6 @@ def main():
         collision_agent = pygame.sprite.spritecollide(bird.sprites()[0], agent, False)
 
         if collision_agent:
-            print('Agent collision')
             maze = mz.MazeInator(screen, MAZE_START_SIZE + MAZE_SIZE_INCREMENT * maze_launched, MAZE_TIME_LIMIT)
             maze_launched += 1
             maze_status = maze.update()
@@ -244,7 +259,6 @@ def main():
             if maze_status == 1:
                 maze_solved += 1
                 bird.sprite.alive = True
-                score += 1
             time.sleep(1)
             after_maze = True
             agent.sprites()[0].kill()
@@ -255,6 +269,11 @@ def main():
 
 def menu():
     global game_stopped
+    global MAZE_START_SIZE
+    global MAZE_SIZE_INCREMENT
+    global freq_diff_x
+    global freq_diff_y
+    global coins_needed
 
     while game_stopped:
         exit_game()
@@ -263,7 +282,30 @@ def menu():
         screen.blit(start_image, (0, 0))
 
         user_input = pygame.key.get_pressed()
-        if user_input[pygame.K_SPACE]:
+        
+        if user_input[pygame.K_e]:
+            MAZE_START_SIZE=3
+            MAZE_SIZE_INCREMENT=1
+            freq_diff_x, freq_diff_y=2,3
+            coins_needed=1
+            main()
+        if user_input[pygame.K_m]:
+            MAZE_START_SIZE=5
+            MAZE_SIZE_INCREMENT=2
+            freq_diff_x, freq_diff_y=3,5
+            coins_needed=3
+            main()
+        if user_input[pygame.K_h]:
+            MAZE_START_SIZE=10
+            MAZE_SIZE_INCREMENT=2
+            freq_diff_x, freq_diff_y=4,8
+            coins_needed=5
+            main()
+        if user_input[pygame.K_x]:
+            MAZE_START_SIZE=15
+            MAZE_SIZE_INCREMENT=3
+            freq_diff_x, freq_diff_y=10,15
+            coins_needed=5
             main()
 
         pygame.display.update()

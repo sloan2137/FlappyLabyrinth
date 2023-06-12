@@ -7,19 +7,19 @@ import draw_text
 
 DEFAULT_DIFFICULTY = 10
 MAZE_GENERATOR_PATH = "maze_gen.exe"
-MAZE_WALL_COLOUR = (0, 0, 0)
-MAZE_BACKGROUND_COLOUR = (255, 255, 255)
+MAZE_WALL_COLOUR = (255, 255, 255)
+MAZE_BACKGROUND_COLOUR = (20, 57, 47)
 WALL_WIDTH = 2
 
 MIN_OFFSET = 10
 
 MAZE_RUNNER_SIZE = 10
-MAZE_RUNNER_COLOUR = (255, 0, 0)
+MAZE_RUNNER_COLOUR = (85, 100, 110)
 MAZE_RUNNER_SPEED = 5
 
-GOAL_COLOUR = (0, 255, 0)
+GOAL_COLOUR = (245, 210, 125)
 
-FONT = "comicsansms"
+FONT = "Segoe"
 
 UP_CONTROLS = [pygame.K_UP, pygame.K_w]
 LEFT_CONTROLS = [pygame.K_LEFT, pygame.K_a]
@@ -297,10 +297,10 @@ class MazeInator:
             return 0
         else:
             if self.won:
-                self.draw_message("You won!", (0, 128, 0))
+                self.draw_message("Good job.", (255, 255, 255))
                 return 1
             else:
-                self.draw_message("Time's up!", (255, 0, 0))
+                self.draw_message("...", (255, 255, 255))
                 return -1
 
 
