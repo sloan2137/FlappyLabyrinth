@@ -287,7 +287,7 @@ def menu():
             MAZE_START_SIZE=3
             MAZE_SIZE_INCREMENT=1
             freq_diff_x, freq_diff_y=2,3
-            coins_needed=1
+            coins_needed=2
             main()
         if user_input[pygame.K_m]:
             MAZE_START_SIZE=5
