@@ -201,7 +201,7 @@ def main():
 
         collision_obstacles = pygame.sprite.spritecollide(bird.sprites()[0], obstacles, False)
         collision_ground = pygame.sprite.spritecollide(bird.sprites()[0], ground, False)
-        if (collision_obstacles or collision_ground) and score!=last_score and not after_good_end:
+        if (collision_obstacles or collision_ground) and score!=last_score and score!=last_score+1 and not after_good_end:
             if maze_solved>0:
                 maze_solved-=1
                 last_score=score 
@@ -228,7 +228,7 @@ def main():
             timer += 1
             x_top, x_bottom = 550, 550
             y_top = random.randint(-600, -480)
-            y_bottom = y_top + random.randint(90, 130) + bottom_obstacle_image.get_height()
+            y_bottom = y_top + random.randint(100, 120) + bottom_obstacle_image.get_height()
             obstacles.add(Obstacle(x_top, y_top, top_obstacle_image, 'top'))
             obstacles.add(Obstacle(x_bottom, y_bottom, bottom_obstacle_image, 'bottom'))
 
