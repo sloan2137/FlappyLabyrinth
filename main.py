@@ -285,24 +285,28 @@ def menu():
         
         if user_input[pygame.K_e]:
             MAZE_START_SIZE=3
+            MAZE_TIME_LIMIT = 10
             MAZE_SIZE_INCREMENT=1
             freq_diff_x, freq_diff_y=2,3
             coins_needed=2
             main()
         if user_input[pygame.K_m]:
             MAZE_START_SIZE=5
+            MAZE_TIME_LIMIT = 15
             MAZE_SIZE_INCREMENT=2
             freq_diff_x, freq_diff_y=3,5
             coins_needed=3
             main()
         if user_input[pygame.K_h]:
             MAZE_START_SIZE=10
+            MAZE_TIME_LIMIT = 20
             MAZE_SIZE_INCREMENT=2
             freq_diff_x, freq_diff_y=4,8
             coins_needed=5
             main()
         if user_input[pygame.K_x]:
             MAZE_START_SIZE=15
+            MAZE_TIME_LIMIT = 30
             MAZE_SIZE_INCREMENT=3
             freq_diff_x, freq_diff_y=10,15
             coins_needed=5
